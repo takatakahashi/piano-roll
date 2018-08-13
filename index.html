@@ -2,14 +2,20 @@
 <html>
 <head>
     <meta charset="utf-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>PianoRoll</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" type="text/css" media="screen" href="main.css" />
-    <script src="main.js"></script>
 </head>
-<body>
-    <canvas id="notes"></canvas>
-    
+<body onload="start()">
+    <div id="container">
+        <div id="piano-container">
+            <canvas id="piano" height="1000px"></canvas>
+        </div>
+        
+        <div id="grid-container">
+            <canvas id="grid" width="3000px" height="1000px"></canvas>
+        </div>
+    </div>
+    <script src="main.js"></script>
 </body>
 </html>
