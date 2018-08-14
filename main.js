@@ -1,60 +1,68 @@
 function start(){
-    var piano = document.getElementById("piano-container");
-    var grid = document.getElementById("grid-container");
+    var pContainer = document.getElementById("piano-container");
+    var gContainer = document.getElementById("grid-container");
 
-    piano.onscroll = function(){
-        grid.scrollTop = this.scrollTop;
+    pContainer.onscroll = function(){
+        gContainer.scrollTop = this.scrollTop;
         console.log()
     };
     
-    grid.onscroll = function(){
-        piano.scrollTop = this.scrollTop;
+    gContainer.onscroll = function(){
+        pContainer.scrollTop = this.scrollTop;
     };
-}
 
+    grid = new Grid();
+    piano = new Piano();
 
-var Piano = function(){
-    this.canvas = document.getElementById("piano");
-    this.context = this.canvas.getContext("2d");
-    this.areaWidth = this.canvas.clientWidth;
-    this.areaHeight = this.canvas.clientHeight;
-}
-
-Piano.prototype.drawPiano = function(){
-    this.context.font = "20px serif"
-    this.context.fillText("Something like Piano", 0, 40);
-
+    piano.drawPiano();
+    grid.drawGrid();
 }
 
 
 
-var Grid = function(){
-    this.canvas = document.getElementById("grid");
-    this.context = this.canvas.getContext("2d");
-    this.areaWidth = this.canvas.clientWidth;
-    this.areaHeight = this.canvas.clientHeight;
-    this.cellWidth = 100;
-    this.cellHeight = 50;
-}
-
-Grid.prototype.drawGrid = function(){
-    for(var w = 0; w <= this.areaWidth; w+=this.cellWidth){
-        this.context.beginPath();
-        this.context.moveTo(w, 0);
-        this.context.lineTo(w, this.areaHeight);
-        this.context.stroke();
+class Piano {
+    constructor() {
+        this.canvas = document.getElementById("piano");
+        this.ctx = this.canvas.getContext("2d");
+        this.areaWidth = this.canvas.clientWidth;
+        this.areaHeight = this.canvas.clientHeight;
+    
     }
 
-    for(var h = 0; h <= this.areaHeight; h+=this.cellHeight){
-        this.context.beginPath();
-        this.context.moveTo(0, h);
-        this.context.lineTo(this.areaWidth, h);
-        this.context.stroke();
+    drawPiano() {
+        console.log(this.areaWidth, this.areaHeight);
+        this.ctx.fillRect(0, 0, this.areaWidth, this.areaHeight);
+//        this.ctx.font = "20px serif"
+//        this.ctx.fillText("Something like Piano", 0, 40);    
     }
 }
 
-grid = new Grid();
-piano = new Piano();
 
-piano.drawPiano();
-grid.drawGrid();
+class Grid {
+    constructor() {
+        this.canvas = document.getElementById("grid");
+        this.ctx = this.canvas.getContext("2d");
+        this.areaWidth = this.canvas.clientWidth;
+        this.areaHeight = this.canvas.clientHeight;
+        this.cellWidth = 100;
+        this.cellHeight = 50;
+    
+    }   
+
+    drawGrid() {
+        for(var w = 0; w <= this.areaWidth; w+=this.cellWidth){
+            this.ctx.beginPath();
+            this.ctx.moveTo(w, 0);
+            this.ctx.lineTo(w, this.areaHeight);
+            this.ctx.stroke();
+        }
+    
+        for(var h = 0; h <= this.areaHeight; h+=this.cellHeight){
+            this.ctx.beginPath();
+            this.ctx.moveTo(0, h);
+            this.ctx.lineTo(this.areaWidth, h);
+            this.ctx.stroke();
+        }
+    }
+
+}
