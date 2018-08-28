@@ -21,14 +21,14 @@ html, body{
     height: 1000px;
 }
 
-#grid-container{
+#score-container{
     float: left;
     width: 80%;
     height: 100%;
     overflow: scroll;
 }
 
-#grid{
+#score{
     position: relative;
     width: 3000px;
     height: 1000px;
