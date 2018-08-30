@@ -1,11 +1,12 @@
 function start(){
     let pContainer = document.getElementById("piano-container");
     let sContainer = document.getElementById("score-container");
+    //canvasの幅をdivの幅に揃える
+    document.getElementById('piano').width = pContainer.clientWidth;
 
     //スクロールを合わせる
     pContainer.onscroll = function(){
         sContainer.scrollTop = this.scrollTop;
-        console.log()
     };
     
     sContainer.onscroll = function(){
@@ -31,9 +32,8 @@ class Piano {
     }
 
     drawPiano() {
-        //this.ctx.fillRect(0, 0, this.areaWidth, this.areaHeight);
-        this.ctx.font = "20px serif"
-        this.ctx.fillText("Something like Piano", 0, 40);    
+        this.ctx.strokeStyle = "black";
+        this.ctx.strokeRect(0, 0, this.areaWidth, this.areaHeight);        
     }
 }
 
@@ -60,6 +60,7 @@ class Score {
 
     //枠線の描画
     drawGrid() {
+        this.ctx.strokeStyle = "black";
         for(let w = 0; w <= this.areaWidth; w+=this.cellWidth){
             this.ctx.beginPath();
             this.ctx.moveTo(w, 0);
@@ -75,9 +76,10 @@ class Score {
         }
     }
 
-    
-    drawScore(){
+
+    drawScore() {
         this.ctx.fillStyle = "red";
+        this.ctx.strokeStyle = "black";
         for(let x = 0; x < this.horizontalNum; x++){
             for(let y = 0; y < this.verticalNum; y++){
                 if(this.score[x][y] !== null){
@@ -91,13 +93,13 @@ class Score {
         }
     }
 
-    updateScore(x, y){
+    updateScore(x, y) {
         this.score[x][y] = this.score[x][y] === null ? 1 : null;
-
+        console.log(this.score);
     }
 
 
-    draw(){
+    draw() {
         this.ctx.clearRect(0, 0, this.areaWidth, this.areaHeight);
         this.drawGrid();
         this.drawScore();
