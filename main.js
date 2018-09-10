@@ -13,13 +13,29 @@ function start(){
         pContainer.scrollTop = this.scrollTop;
     };
 
-    score = new Score();
-    piano = new Piano();
-
-    piano.drawPiano();
-    score.drawGrid();
+    menu = new Menu();
 }
 
+//Menuバーのイベントから他のクラスに処理を促すクラス
+class Menu {
+    constructor() {
+        this.notesPerMeasure = 4;
+        this.measureNum = 30;
+        this.horizontalNum = this.measureNum * this.notesPerMeasure;
+        this.verticalNum = 24;
+
+        this.editor = new Editor(this.verticalNum, this.horizontalNum, this.measureNum);
+        this.piano = new Piano();
+
+        this.draw();
+    }
+
+    draw() {
+        this.editor.draw();
+        this.piano.draw();
+
+    }
+}
 
 
 class Piano {
@@ -28,26 +44,88 @@ class Piano {
         this.ctx = this.canvas.getContext("2d");
         this.areaWidth = this.canvas.clientWidth;
         this.areaHeight = this.canvas.clientHeight;
-    
     }
 
-    drawPiano() {
+    draw() {
         this.ctx.strokeStyle = "black";
         this.ctx.strokeRect(0, 0, this.areaWidth, this.areaHeight);        
     }
 }
 
-
-class Score {
-    constructor() {
-        this.canvas = document.getElementById("score");
+//打ち込み画面を管理するクラス
+class Editor {
+    constructor(verticalNum, horizontalNum, measureNum){
+        this.canvas = document.getElementById("editor");
         this.ctx = this.canvas.getContext("2d");
-        this.notesPerMeasure = 4;
-        this.measureNum = 30;
-        this.horizontalNum = this.measureNum * this.notesPerMeasure;
-        this.verticalNum = 24
-        this.areaWidth = this.canvas.clientWidth;
-        this.areaHeight = this.canvas.clientHeight;
+
+        this.width = this.canvas.clientWidth;
+        this.height = this.canvas.clientHeight;
+
+        this.verticalNum = verticalNum;
+        this.horizontalNum = horizontalNum;
+        this.measureNum = measureNum;
+
+        this.score = new Score(
+            this.ctx, this.width, this.height, this.horizontalNum, this.verticalNum
+        );
+
+        this.backGround = new BackGround(
+            this.ctx, this.width, this.height, this.measureNum, this.verticalNum
+        );
+
+        this.canvas.addEventListener('mousedown', this.score.onMouseDown.bind(this.score), false);
+        this.canvas.addEventListener('mouseup', this.score.onMouseUp.bind(this.score), false);
+        this.canvas.addEventListener('mousemove', this.score.onMouseMove.bind(this.score), false);
+
+        this.draw();
+    }
+
+    draw() {
+        this.ctx.clearRect(0, 0, this.width, this.height);
+        this.score.draw(this.ctx);
+        this.backGround.draw(this.ctx);
+    }
+}
+
+//枠線などを描画するクラス
+class BackGround {
+    constructor(ctx, width, height, measureNum, vNum) {
+        this.ctx = ctx;
+        this.areaWidth = width;
+        this.areaHeight = height;
+        this.measureNum = measureNum;
+        this.verticalNum = vNum;
+    }
+
+    draw() {
+        const cellWidth = this.areaWidth / this.measureNum;
+        const cellHeight = this.areaHeight / this.verticalNum;
+        this.ctx.strokeStyle = "black";
+
+        for(let w = 0; w <= this.areaWidth; w += cellWidth){
+            this.ctx.beginPath();
+            this.ctx.moveTo(w, 0);
+            this.ctx.lineTo(w, this.areaHeight);
+            this.ctx.stroke();
+        }
+    
+        for(let h = 0; h <= this.areaHeight; h += cellHeight){
+            this.ctx.beginPath();
+            this.ctx.moveTo(0, h);
+            this.ctx.lineTo(this.areaWidth, h);
+            this.ctx.stroke();
+        }
+    }
+}
+
+//打ち込まれた内部データを処理するクラス
+class Score {
+    constructor(ctx, width, height, horizontalNum, verticalNum) {
+        this.ctx = ctx;
+        this.horizontalNum = horizontalNum;
+        this.verticalNum = verticalNum;
+        this.areaWidth = width;
+        this.areaHeight = height;
         this.cellWidth = this.areaWidth / this.horizontalNum;
         this.cellHeight = this.areaHeight / this.verticalNum;
 
@@ -59,32 +137,9 @@ class Score {
             lyric: "あ",
             pitch: null
         };
-
-        this.canvas.addEventListener('mousedown', this.onMouseDown.bind(this), false);
-        this.canvas.addEventListener('mouseup', this.onMouseUp.bind(this), false);
-        this.canvas.addEventListener('mousemove', this.onMouseMove.bind(this), false);
-
     }   
 
-    //枠線の描画
-    drawGrid() {
-        this.ctx.strokeStyle = "black";
-        for(let w = 0; w <= this.areaWidth; w+=this.cellWidth * this.notesPerMeasure){
-            this.ctx.beginPath();
-            this.ctx.moveTo(w, 0);
-            this.ctx.lineTo(w, this.areaHeight);
-            this.ctx.stroke();
-        }
-    
-        for(let h = 0; h <= this.areaHeight; h+=this.cellHeight){
-            this.ctx.beginPath();
-            this.ctx.moveTo(0, h);
-            this.ctx.lineTo(this.areaWidth, h);
-            this.ctx.stroke();
-        }
-    }
-    
-    drawScore() {
+    draw() {
         this.ctx.strokeStyle = "black";
         this.ctx.font = this.cellHeight + "px Arial";
 
@@ -109,6 +164,7 @@ class Score {
         }
     }
 
+    /*
     updateScore(s, e, p) {
         for(var i = 0, length = this.score.length; i < length; i++){
             if(this.score[i].start > s){
@@ -124,14 +180,7 @@ class Score {
         });
         console.log(this.score);
     }
-
-
-    draw() {
-        this.ctx.clearRect(0, 0, this.areaWidth, this.areaHeight);
-        this.drawGrid();
-        this.drawScore();
-    }
-
+    */
 
     noteExists(x, y) {
         for(let obj of this.score){
