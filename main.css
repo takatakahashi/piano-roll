@@ -22,7 +22,8 @@ html, body{
     height: 1000px;
 }
 
-#score-container{
+#editor-container{
+    position: relative;
     float: left;
     width: 80%;
     height: 100%;
@@ -30,7 +31,9 @@ html, body{
 }
 
 #score{
-    position: relative;
-    width: 3000px;
-    height: 1000px;
+    position: absolute;
+}
+
+#background{
+    position: absolute;
 }
