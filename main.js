@@ -1,15 +1,15 @@
 function start(){
     let pContainer = document.getElementById("piano-container");
-    let sContainer = document.getElementById("score-container");
+    let eContainer = document.getElementById("editor-container");
     //canvasの幅をdivの幅に揃える
     document.getElementById('piano').width = pContainer.clientWidth;
 
     //スクロールを合わせる
     pContainer.onscroll = function(){
-        sContainer.scrollTop = this.scrollTop;
+        eContainer.scrollTop = this.scrollTop;
     };
     
-    sContainer.onscroll = function(){
+    eContainer.onscroll = function(){
         pContainer.scrollTop = this.scrollTop;
     };
 
@@ -55,12 +55,7 @@ class Piano {
 //打ち込み画面を管理するクラス
 class Editor {
     constructor(verticalNum, horizontalNum, measureNum){
-        this.canvas = document.getElementById("editor");
-        this.ctx = this.canvas.getContext("2d");
-
-        this.width = this.canvas.clientWidth;
-        this.height = this.canvas.clientHeight;
-
+        this.width = this.height = 1;
         this.verticalNum = verticalNum;
         this.horizontalNum = horizontalNum;
         this.measureNum = measureNum;
@@ -73,31 +68,29 @@ class Editor {
             this.ctx, this.width, this.height, this.measureNum, this.verticalNum
         );
 
-        this.canvas.addEventListener('mousedown', this.score.onMouseDown.bind(this.score), false);
-        this.canvas.addEventListener('mouseup', this.score.onMouseUp.bind(this.score), false);
-        this.canvas.addEventListener('mousemove', this.score.onMouseMove.bind(this.score), false);
-
         this.draw();
     }
 
     draw() {
-        this.ctx.clearRect(0, 0, this.width, this.height);
-        this.score.draw(this.ctx);
         this.backGround.draw(this.ctx);
+        this.score.draw(this.ctx);
     }
 }
 
 //枠線などを描画するクラス
 class BackGround {
     constructor(ctx, width, height, measureNum, vNum) {
-        this.ctx = ctx;
-        this.areaWidth = width;
-        this.areaHeight = height;
+        this.canvas = document.getElementById("background");
+        this.ctx = this.canvas.getContext("2d");
+        this.areaWidth = this.canvas.clientWidth;
+        this.areaHeight = this.canvas.clientHeight;
         this.measureNum = measureNum;
         this.verticalNum = vNum;
     }
 
     draw() {
+        this.ctx.clearRect(0, 0, this.areaWidth, this.areaHeight);
+
         const cellWidth = this.areaWidth / this.measureNum;
         const cellHeight = this.areaHeight / this.verticalNum;
         this.ctx.strokeStyle = "black";
@@ -121,11 +114,12 @@ class BackGround {
 //打ち込まれた内部データを処理するクラス
 class Score {
     constructor(ctx, width, height, horizontalNum, verticalNum) {
-        this.ctx = ctx;
+        this.canvas = document.getElementById("score");
+        this.ctx = this.canvas.getContext("2d");
         this.horizontalNum = horizontalNum;
         this.verticalNum = verticalNum;
-        this.areaWidth = width;
-        this.areaHeight = height;
+        this.areaWidth = this.canvas.clientWidth;
+        this.areaHeight = this.canvas.clientHeight;
         this.cellWidth = this.areaWidth / this.horizontalNum;
         this.cellHeight = this.areaHeight / this.verticalNum;
 
@@ -137,11 +131,18 @@ class Score {
             lyric: "あ",
             pitch: null
         };
+
+        this.canvas.addEventListener('mousedown', this.onMouseDown.bind(this), false);
+        this.canvas.addEventListener('mouseup', this.onMouseUp.bind(this), false);
+        this.canvas.addEventListener('mousemove', this.onMouseMove.bind(this), false);
     }   
 
     draw() {
+        this.ctx.clearRect(0, 0, this.areaWidth, this.areaHeight);
+
         this.ctx.strokeStyle = "black";
         this.ctx.font = this.cellHeight + "px Arial";
+        this.ctx.textBaseline = "middle";
 
         let objs = this.score.concat();
         if(this.isDragging){
@@ -160,7 +161,7 @@ class Score {
 
             //歌詞の描画
             this.ctx.fillStyle = "black";
-            this.ctx.fillText(obj.lyric, left, top + this.cellHeight, width);
+            this.ctx.fillText(obj.lyric, left, top + this.cellHeight / 2, width);
         }
     }
 
@@ -183,19 +184,21 @@ class Score {
     */
 
     noteExists(x, y) {
-        for(let obj of this.score){
-            if(obj.start <= x && x <= obj.end){
-                if(obj.pitch === y){
-                    return true;
+        for(let i = 0, length = this.score.length; i < length; i++){
+            if(this.score[i].start <= x && x <= this.score[i].end){
+                if(this.score[i].pitch === y){
+                    return i;
                 }
             }
         }
 
-        return false;
+        return -1;
     }
 
     //インデックスだけで消せるようにしたい
-    removeNote(x, y) {
+    removeNote(i) {
+        this.score.splice(i, 1);
+        /*
         for(let i = 0, length = this.score.length; i < length; i++){
             if(this.score[i].start <= x && x<= this.score[i].end){
                 if(this.score[i].pitch === y){
@@ -204,6 +207,7 @@ class Score {
                 }
             }
         }
+        */
 
     }
 
@@ -217,15 +221,54 @@ class Score {
         this.score.splice(i, 0, obj);
     }
 
+    addTextBox(index) {
+        const input = document.createElement("input");
+        input.type = "text";
+        input.id = "lyric";
+        input.value = this.score[index].lyric;
+        input.style.position = "absolute";
+        input.style.fontSize = this.cellHeight + "px";
+        input.style.top = this.score[index].pitch * this.cellHeight + "px";
+        input.style.left = this.score[index].start * this.cellWidth + "px";
+        input.style.width = this.cellWidth * (this.score[index].end - this.score[index].start + 1) + "px";
+        input.style.height = this.cellHeight + "px";
+        input.style.padding = "0px";
+        input.style.margin = "0px";
+        input.style.border = "0px";
+        input.style.backgroundColor = "red";
+        input.onblur = function() {
+            this.parentNode.removeChild(this);
+        };
+        input.onkeypress = function(e) {
+            if(e.keyCode === 13){
+                let txtBox = document.getElementById("lyric");
+                this.score[index].lyric = txtBox.value;
+                txtBox.blur();
+                this.draw();
+            }
+        }.bind(this);
+
+        //テキストボックスの追加
+        this.canvas.parentNode.insertBefore(input, this.canvas.nextSibling);
+
+        //テキストボックスにフォーカスを合わせる
+        setTimeout(function() {
+            document.getElementById("lyric").focus();
+        }, 0);
+
+    }
+
     onMouseDown(e) {
         const rect = e.target.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
         const xIndex = Math.floor(x / this.cellWidth);
         const yIndex = Math.floor(y / this.cellHeight);
+        const sameIndex = this.noteExists(xIndex, yIndex);
 
-        if(this.noteExists(xIndex, yIndex)){
-            this.removeNote(xIndex, yIndex);
+        if(sameIndex !== -1){
+            this.addTextBox(sameIndex);
+            //this.removeNote(sameIndex);
         }
         else{
             this.dragProperty.start = xIndex;

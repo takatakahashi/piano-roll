@@ -5,6 +5,7 @@
     <title>PianoRoll</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" type="text/css" media="screen" href="main.css" />
+    <script src="main.js"></script>
 </head>
 <body onload="start()">
     <div id="container">
@@ -12,10 +13,10 @@
             <canvas id="piano" height="1000px"></canvas>
         </div>
         
-        <div id="score-container">
-            <canvas id="editor" width="3000px" height="1000px"></canvas>
+        <div id="editor-container">
+            <canvas id="background" width="3000px" height="1000px"></canvas>
+            <canvas id="score" width="3000px" height="1000px"></canvas>
         </div>
     </div>
-    <script src="main.js"></script>
 </body>
 </html>
