@@ -27,13 +27,6 @@ class Menu {
         this.editor = new Editor(this.verticalNum, this.horizontalNum, this.measureNum);
         this.piano = new Piano();
 
-        this.draw();
-    }
-
-    draw() {
-        this.editor.draw();
-        this.piano.draw();
-
     }
 }
 
@@ -44,6 +37,8 @@ class Piano {
         this.ctx = this.canvas.getContext("2d");
         this.areaWidth = this.canvas.clientWidth;
         this.areaHeight = this.canvas.clientHeight;
+
+        this.draw();
     }
 
     draw() {
@@ -60,13 +55,9 @@ class Editor {
         this.horizontalNum = horizontalNum;
         this.measureNum = measureNum;
 
-        this.score = new Score(
-            this.ctx, this.width, this.height, this.horizontalNum, this.verticalNum
-        );
+        this.score = new Score(this.horizontalNum, this.verticalNum);
 
-        this.backGround = new BackGround(
-            this.ctx, this.width, this.height, this.measureNum, this.verticalNum
-        );
+        this.backGround = new BackGround(this.measureNum, this.verticalNum);
 
         this.draw();
     }
@@ -79,13 +70,14 @@ class Editor {
 
 //枠線などを描画するクラス
 class BackGround {
-    constructor(ctx, width, height, measureNum, vNum) {
+    constructor(measureNum, vNum) {
         this.canvas = document.getElementById("background");
         this.ctx = this.canvas.getContext("2d");
         this.areaWidth = this.canvas.clientWidth;
         this.areaHeight = this.canvas.clientHeight;
         this.measureNum = measureNum;
         this.verticalNum = vNum;
+        this.draw();
     }
 
     draw() {
@@ -113,7 +105,7 @@ class BackGround {
 
 //打ち込まれた内部データを処理するクラス
 class Score {
-    constructor(ctx, width, height, horizontalNum, verticalNum) {
+    constructor(horizontalNum, verticalNum) {
         this.canvas = document.getElementById("score");
         this.ctx = this.canvas.getContext("2d");
         this.horizontalNum = horizontalNum;
@@ -124,6 +116,7 @@ class Score {
         this.cellHeight = this.areaHeight / this.verticalNum;
 
         this.score = new Array();
+        this.isClicked = false;
         this.isDragging = false;
         this.dragProperty = {
             start: null,
@@ -135,6 +128,7 @@ class Score {
         this.canvas.addEventListener('mousedown', this.onMouseDown.bind(this), false);
         this.canvas.addEventListener('mouseup', this.onMouseUp.bind(this), false);
         this.canvas.addEventListener('mousemove', this.onMouseMove.bind(this), false);
+        this.draw();
     }   
 
     draw() {
@@ -165,24 +159,6 @@ class Score {
         }
     }
 
-    /*
-    updateScore(s, e, p) {
-        for(var i = 0, length = this.score.length; i < length; i++){
-            if(this.score[i].start > s){
-                break;
-            }
-        }
-
-        this.score.splice(i, 0, {
-            start: s,
-            end: e,
-            lyric: "あ",
-            pitch: p
-        });
-        console.log(this.score);
-    }
-    */
-
     noteExists(x, y) {
         for(let i = 0, length = this.score.length; i < length; i++){
             if(this.score[i].start <= x && x <= this.score[i].end){
@@ -212,13 +188,39 @@ class Score {
     }
 
     addNote(obj) {
+        let i_s, i_e, objList = [obj];
+        /*
+            追加するセルの先頭がすでにあるセルとセルの間にあるなら,挿入するインデックスのみを保持
+            追加するセルの先頭がすでにあるセルに被っていたら,元のセルの長さを変更してobjListの先頭に追加
+        */
         for(var i = 0, length = this.score.length; i < length; i++){
-            if(this.score[i].start > obj.start){
+            if(this.score[i].start >= obj.start) break;
+
+            if(this.score[i].start < obj.start && obj.start <= this.score[i].end){
+                let tmp = Object.assign({}, this.score[i]);
+                tmp.end = obj.start-1;
+                objList.unshift(tmp);
                 break;
             }
         }
+        i_s = i;
 
-        this.score.splice(i, 0, obj);
+        for(i = 0; i < length; i++){
+            if(this.score[i].start <= obj.end && obj.end < this.score[i].end){
+                let tmp = Object.assign({}, this.score[i]);
+                tmp.start = obj.end+1;
+                objList.push(tmp);
+                break;
+            }
+
+            if(this.score[i].end >= obj.end) break;
+        }
+        i_e = i;
+
+        //追加する要素の個数が1個かつ,挿入の先頭位置と末尾位置が一致する時は削除を伴わない
+        let deleteNum = objList.length === 1 && i_e-i_s === 0 ? 0 : i_e-i_s+1;
+
+        this.score.splice.apply(this.score, [i_s, deleteNum].concat(objList));
     }
 
     addTextBox(index) {
@@ -260,15 +262,27 @@ class Score {
 
     onMouseDown(e) {
         const rect = e.target.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
+        const x = Math.max(0, e.clientX - rect.left);
+        const y = Math.max(0, e.clientY - rect.top);
         const xIndex = Math.floor(x / this.cellWidth);
         const yIndex = Math.floor(y / this.cellHeight);
         const sameIndex = this.noteExists(xIndex, yIndex);
 
         if(sameIndex !== -1){
-            this.addTextBox(sameIndex);
-            //this.removeNote(sameIndex);
+            if(this.isClicked){
+                this.addTextBox(sameIndex);
+                this.isClicked = false;
+            }
+            else{
+                this.isClicked = true;
+                setTimeout(function() {
+                    if(this.isClicked){
+                        this.score.splice(sameIndex, 1);
+                    }
+                    this.isClicked = false;
+                    this.draw();
+                }.bind(this), 200);
+            }
         }
         else{
             this.dragProperty.start = xIndex;
