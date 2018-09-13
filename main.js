@@ -25,32 +25,60 @@ class Menu {
         this.verticalNum = 24;
 
         this.editor = new Editor(this.verticalNum, this.horizontalNum, this.measureNum);
-        this.piano = new Piano();
+        this.piano = new Piano(this.verticalNum);
 
     }
 }
 
-
 class Piano {
-    constructor() {
+    constructor(verticalNum) {
         this.canvas = document.getElementById("piano");
         this.ctx = this.canvas.getContext("2d");
         this.areaWidth = this.canvas.clientWidth;
         this.areaHeight = this.canvas.clientHeight;
 
+        this.verticalNum = verticalNum;
         this.draw();
     }
 
     draw() {
         this.ctx.strokeStyle = "black";
-        this.ctx.strokeRect(0, 0, this.areaWidth, this.areaHeight);        
+        this.ctx.strokeRect(0, 0, this.areaWidth, this.areaHeight);
+
+        const pianoCellHeight = this.areaHeight / this.verticalNum;
+
+        for(let h = 0; h <= this.areaHeight; h += pianoCellHeight){
+
+//            if(h / pianoCellHeight % 12 == 0 || h / pianoCellHeight % 12 == 7) {
+//                this.ctx.strokeStyle = "black";
+//            } else {
+                  this.ctx.strokeStyle = "gray";
+//            }
+
+            this.ctx.beginPath();
+            this.ctx.moveTo(0, h);
+            this.ctx.lineTo(this.areaWidth, h);
+            this.ctx.stroke();
+        }
+
+        const octave = this.verticalNum / 12;
+
+        for(let o = 0; o < octave; o++){
+            this.ctx.fillStyle = "black";
+            this.ctx.fillRect(0, pianoCellHeight * (1 + 12 * (octave - 1 - o)), this.areaWidth * 2 / 3, pianoCellHeight);
+            this.ctx.fillRect(0, pianoCellHeight * (3 + 12 * (octave - 1 - o)), this.areaWidth * 2 / 3, pianoCellHeight);
+            this.ctx.fillRect(0, pianoCellHeight * (5 + 12 * (octave - 1 - o)), this.areaWidth * 2 / 3, pianoCellHeight);
+            this.ctx.fillRect(0, pianoCellHeight * (8 + 12 * (octave - 1 - o)), this.areaWidth * 2 / 3, pianoCellHeight);
+            this.ctx.fillRect(0, pianoCellHeight * (10 + 12 * (octave - 1 - o)), this.areaWidth * 2 / 3, pianoCellHeight);
+
+            this.ctx.fillText("C" + String(o), 170,  pianoCellHeight * (11 + 12 * (octave - 1 - o)) + 25);
+        }
     }
 }
 
 //打ち込み画面を管理するクラス
 class Editor {
     constructor(verticalNum, horizontalNum, measureNum){
-        this.width = this.height = 1;
         this.verticalNum = verticalNum;
         this.horizontalNum = horizontalNum;
         this.measureNum = measureNum;
@@ -171,54 +199,49 @@ class Score {
         return -1;
     }
 
-    //インデックスだけで消せるようにしたい
-    removeNote(i) {
-        this.score.splice(i, 1);
-        /*
-        for(let i = 0, length = this.score.length; i < length; i++){
-            if(this.score[i].start <= x && x<= this.score[i].end){
-                if(this.score[i].pitch === y){
-                    this.score.splice(i, 1);
-                    break;
-                }
-            }
-        }
-        */
-
-    }
-
     addNote(obj) {
-        let i_s, i_e, objList = [obj];
+        let shouldDelete = true, objList = [obj];
+
         /*
             追加するセルの先頭がすでにあるセルとセルの間にあるなら,挿入するインデックスのみを保持
             追加するセルの先頭がすでにあるセルに被っていたら,元のセルの長さを変更してobjListの先頭に追加
+            追加するセルがどこのセルとも被ってなかったらshouldDeleteフラグを消す
         */
-        for(var i = 0, length = this.score.length; i < length; i++){
-            if(this.score[i].start >= obj.start) break;
 
-            if(this.score[i].start < obj.start && obj.start <= this.score[i].end){
-                let tmp = Object.assign({}, this.score[i]);
+        for(var i_s = 0, length = this.score.length; i_s < length; i_s++){
+            if(this.score[i_s].start >= obj.start){
+                if(this.score[i_s].start > obj.end){
+                    shouldDelete = false;
+                }
+                break;
+            }
+            if(this.score[i_s].start < obj.start && obj.start <= this.score[i_s].end){
+                let tmp = Object.assign({}, this.score[i_s]);
                 tmp.end = obj.start-1;
                 objList.unshift(tmp);
                 break;
             }
         }
-        i_s = i;
 
-        for(i = 0; i < length; i++){
-            if(this.score[i].start <= obj.end && obj.end < this.score[i].end){
-                let tmp = Object.assign({}, this.score[i]);
+        /*
+            追加するセルの末尾がすでにあるセルに被っていたら,元のセルの長さを変更してobjListの先頭に追加
+            追加するセルの末尾がすでにあるセルとセルの間にあるなら,挿入するインデックスのみを保持
+        */
+
+        for(var i_e = i_s; i_e < length; i_e++){
+            if(this.score[i_e].start <= obj.end && obj.end < this.score[i_e].end){
+                let tmp = Object.assign({}, this.score[i_e]);
                 tmp.start = obj.end+1;
                 objList.push(tmp);
                 break;
             }
 
-            if(this.score[i].end >= obj.end) break;
+            if(this.score[i_e].end >= obj.end){
+                break;
+            }
         }
-        i_e = i;
-
-        //追加する要素の個数が1個かつ,挿入の先頭位置と末尾位置が一致する時は削除を伴わない
-        let deleteNum = objList.length === 1 && i_e-i_s === 0 ? 0 : i_e-i_s+1;
+        console.log(i_s, i_e, this.score, objList, shouldDelete);
+        let deleteNum = shouldDelete ? i_e-i_s+1 : 0;
 
         this.score.splice.apply(this.score, [i_s, deleteNum].concat(objList));
     }
