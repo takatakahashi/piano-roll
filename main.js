@@ -240,7 +240,7 @@ class Score {
                 break;
             }
         }
-        console.log(i_s, i_e, this.score, objList, shouldDelete);
+
         let deleteNum = shouldDelete ? i_e-i_s+1 : 0;
 
         this.score.splice.apply(this.score, [i_s, deleteNum].concat(objList));
