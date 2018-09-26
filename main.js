@@ -23,8 +23,9 @@ class Menu {
         this.measureNum = 30;
         this.horizontalNum = this.measureNum * this.notesPerMeasure;
         this.verticalNum = 24;
+        this.beats = 4;     //何分の何拍子みたいなやつ
 
-        this.editor = new Editor(this.verticalNum, this.horizontalNum, this.measureNum);
+        this.editor = new Editor(this.verticalNum, this.horizontalNum, this.measureNum, this.beats);
         this.piano = new Piano(this.verticalNum);
 
     }
@@ -78,14 +79,15 @@ class Piano {
 
 //打ち込み画面を管理するクラス
 class Editor {
-    constructor(verticalNum, horizontalNum, measureNum){
+    constructor(verticalNum, horizontalNum, measureNum, beats){
         this.verticalNum = verticalNum;
         this.horizontalNum = horizontalNum;
         this.measureNum = measureNum;
+        this.beats = beats;
 
         this.score = new Score(this.horizontalNum, this.verticalNum);
 
-        this.backGround = new BackGround(this.measureNum, this.verticalNum);
+        this.backGround = new BackGround(this.measureNum, this.verticalNum, this.beats);
 
         this.draw();
     }
@@ -98,13 +100,15 @@ class Editor {
 
 //枠線などを描画するクラス
 class BackGround {
-    constructor(measureNum, vNum) {
+    constructor(measureNum, vNum, beats) {
         this.canvas = document.getElementById("background");
         this.ctx = this.canvas.getContext("2d");
         this.areaWidth = this.canvas.clientWidth;
         this.areaHeight = this.canvas.clientHeight;
         this.measureNum = measureNum;
         this.verticalNum = vNum;
+        this.beats = beats;
+
         this.draw();
     }
 
@@ -116,12 +120,15 @@ class BackGround {
         this.ctx.strokeStyle = "black";
 
         for(let w = 0; w <= this.areaWidth; w += cellWidth){
+            this.ctx.lineWidth = (w % (cellWidth*this.beats) === 0) ? 4 : 1;
+
             this.ctx.beginPath();
             this.ctx.moveTo(w, 0);
             this.ctx.lineTo(w, this.areaHeight);
             this.ctx.stroke();
         }
-    
+
+        this.ctx.lineWidth = 1;
         for(let h = 0; h <= this.areaHeight; h += cellHeight){
             this.ctx.beginPath();
             this.ctx.moveTo(0, h);
